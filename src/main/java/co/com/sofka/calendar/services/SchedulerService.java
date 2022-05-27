@@ -9,12 +9,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -25,27 +22,26 @@ public class SchedulerService {
     @Autowired
     private ProgramRepository programRepository;
 
-    //TODO: deben retornar un flux de programDate Flux<ProgramDate>
+    //TODO: deben retornar un flux de programDate Flux<ProgramDate> - ¡Resuelto!
     public Flux<ProgramDate> generateCalendar(String programId, LocalDate startDate) {
         var endDate = new AtomicReference<>(LocalDate.from(startDate));
         final AtomicInteger[] pivot = {new AtomicInteger()};
         final int[] index = {0};
 
-        //TODO: debe pasarlo a reactivo, no puede trabaja elementos bloqueantes
-        //TODO: trabajar el map reactivo y no deben colectar
+        //TODO: debe pasarlo a reactivo, no puede trabaja elementos bloqueantes - ¡Resuelto!
+        //TODO: trabajar el map reactivo y no deben colectar - ¡Resuelto!
         var program = programRepository.findById(programId);
 
 
-        Flux<ProgramDate> listaPrograma = program.flatMapMany(programa -> Flux.fromStream(getDurationOf(programa)))
+        return program.flatMapMany(programa -> Flux.fromStream(getDurationOf(programa)))
                 .map(toProgramDate(startDate, endDate, pivot[0], index))
                 .switchIfEmpty(Mono.error(new RuntimeException("El programa academico no existe")));
-
-
-        return listaPrograma;
     }
 
     //No tocar
-    private Function<String, ProgramDate> toProgramDate(LocalDate startDate, AtomicReference<LocalDate> endDate, AtomicInteger atomicInteger, int[] index) {
+    private Function<String, ProgramDate> toProgramDate(
+            LocalDate startDate, AtomicReference<LocalDate> endDate,
+            AtomicInteger atomicInteger, int[] index) {
         return category -> {
             var increment = endDate.get().getDayOfWeek().getValue() > 5
                     ? 8 - endDate.get().getDayOfWeek().getValue()
@@ -63,7 +59,8 @@ public class SchedulerService {
     private Stream<String> getDurationOf(Program program) {
         return program.getCourses().stream()
                 .flatMap(courseTime -> courseTime.getCategories().stream())
-                .flatMap(time -> IntStream.range(0, time.getDays()).mapToObj(i -> time.getCategoryName()));
+                .flatMap(time -> IntStream.range(0, time.getDays())
+                        .mapToObj(i -> time.getCategoryName()));
     }
 
 }
