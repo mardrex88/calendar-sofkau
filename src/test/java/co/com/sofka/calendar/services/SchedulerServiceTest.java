@@ -13,7 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ class SchedulerServiceTest {
 
     @Test
         //TODO: modificar el test para que el act sea reactivo, usando stepverifier
-    void generateCalendar() {
+    /*void generateCalendar() {
         var programId = "xxxx";
         var startDate = LocalDate.of(2022, 1, 1);
 
@@ -44,7 +46,24 @@ class SchedulerServiceTest {
         Assertions.assertEquals(13, response.size());//TODO: hacer de otro modo
         Assertions.assertEquals(getSnapResult(), new Gson().toJson(response));//TODO: hacer de otro modo
         Mockito.verify(repository).findById(programId);
+    }*/
+
+    void generateCalendar() {
+        var programId = "xxxx";
+        var startDate = LocalDate.of(2022, 1, 1);
+
+        Program program = getProgramDummy();
+
+        Mockito.when(repository.findById(programId)).thenReturn(Mono.just(program));
+        //TODO: hacer una subscripción de el servicio reactivo
+        Flux<ProgramDate> response = schedulerService.generateCalendar(programId, startDate);
+
+        StepVerifier.create(response).expectNextCount(13L).expectComplete();//TODO: hacer de otro modo - modificado
+        Flux<String> newJson = Flux.just(getSnapResult());
+        StepVerifier.create(newJson).expectNext(new Gson().toJson(response)).expectComplete(); //TODO: hacer de otro modo - modificado
+        Mockito.verify(repository).findById(programId);
     }
+
 
     @Test
     void programNoFound() {
